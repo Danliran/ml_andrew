@@ -42,7 +42,7 @@ def optimize(w ,b, X, Y, num_iterations, learning_rate, print_cost = False):
         grads, cost = propagate(w, b, X, Y)
         dw = grads['dw']
         db = grads['db']
-        #update rule
+        # update rule
         w = w - learning_rate*dw
         b = b - learning_rate*db
 
@@ -125,7 +125,7 @@ if __name__ == '__main__':
   #  print('b= ' + str(params['b']))
  #   print('dw= ' + str(grads['dw']))
 #    print('db= ' + str(grads['db']))
-    d = model(train_set_x,train_set_y,test_set_x,test_set_y,num_iteration=500, learning_rate=0.001,print_cost =True)
+    d = model(train_set_x, train_set_y, test_set_x, test_set_y, num_iteration=500, learning_rate=0.001, print_cost =True)
     #print('w= ' + str(d['w']))
     #print('b= ' + str(d['b']))
     '''
