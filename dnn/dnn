@@ -1,0 +1,14 @@
+# -*- coding: utf-8 -*-
+import numpy as np
+import h5py
+import
+
+
+def initialize_parameters(n_x, n_h, h_y):
+    """
+    :param n_x:
+    :param n_h:
+    :param h_y:
+    :return:
+    """
+    np.random.seed(1)
