@@ -1,15 +1,14 @@
 # -*- coding: utf-8 -*-
-import numpy as np
-import h5py
-import matplotlib.pyplot as plt
-from dnn.testCases_v3 import *
-from dnn.dnn_utils_v2 import sigmoid, sigmoid_backward, relu, relu_backward
+
+from dnn_app_utils_v2 import *
+from logic_regression.lr_utils import load_dataset
 
 
 plt.rcParams['figure.figsize'] = (5.0, 4.0)
 plt.rcParams['image.interpolation'] = 'nearest'
 plt.rcParams['image.cmap'] = 'gray'
 
+np.random.seed(1)
 
 def initialize_parameters(n_x, n_h, n_y):
     """
@@ -49,12 +48,12 @@ def initialize_parameters_deep(layer_dims):
     parameters = {}
     L = len(layer_dims)
 
-    for i in range(1,L):
+    for i in range(1, L):
         parameters['W' + str(i)] = np.random.randn(layer_dims[i], layer_dims[i - 1])*0.01
         parameters['b' + str(i)] = np.zeros((layer_dims[i], 1))
 
-        assert (parameters['W' + str(i)] == (layer_dims[i], layer_dims[i - 1]))
-        assert (parameters['b' + str(i)] == (layer_dims[i], 1))
+        assert (parameters['W' + str(i)].shape == (layer_dims[i], layer_dims[i - 1]))
+        assert (parameters['b' + str(i)].shape == (layer_dims[i], 1))
 
     return parameters
 
@@ -67,7 +66,7 @@ def linear_forward(A, W, b):
     :param b:
     :return:
     """
-    Z = np.dot( W, A) + b
+    Z = np.dot(W, A) + b
 
     assert (Z.shape == (W.shape[0], A.shape[1]))
     cache = (A, W, b)
@@ -223,3 +222,127 @@ def update_parameters(parameters, grads, learning_rate):
         parameters["b" + str(i + 1)] = parameters["b" + str(i + 1)] - learning_rate * parameters["b" + str(i + 1)]
 
     return parameters
+
+
+def two_layer_model(X, Y, layers_dims, learning_rate=0.0001, num_iteration=3000, print_cost=False):
+    """
+
+    :param X:
+    :param Y:
+    :param layers_dims:
+    :param learning_rate:
+    :param num_iteration:
+    :param print_cost:
+    :return:
+    """
+    np.random.seed(1)
+    grads = {}
+    costs = []
+    m = X.shape[1]
+    (n_x, n_h, n_y) = layers_dims
+
+    parameters = initialize_parameters(n_x, n_h, n_y)
+
+    W1 = parameters["W1"]
+    b1 = parameters["b1"]
+    W2 = parameters["W2"]
+    b2 = parameters["b2"]
+
+    for i in range(0, num_iteration):
+        A1, cache1 = linear_activation_forward(X, W1, b1, "relu")
+        A2, cache2 = linear_activation_forward(A1, W2, b2, "sigmoid")
+
+        cost = compute_cost(A2, Y)
+
+        dA2 = -(np.divide(Y, A2) - np.divide(1-Y, 1-A2))
+
+        dA1, dW2, db2 = linear_activation_backward(dA2, cache2, "sigmoid")
+        dA0, dW1, db1  = linear_activation_backward(dA1, cache1, "relu")
+
+        grads["dW1"] = dW1
+        grads["dW2"] = dW2
+        grads["db1"] = db1
+        grads["db2"] = db2
+
+        parameters = update_parameters(parameters, grads, learning_rate)
+
+        W1 = parameters["W1"]
+        b1 = parameters["b1"]
+        W2 = parameters["W2"]
+        b2 = parameters["b2"]
+
+        if print_cost and i % 100 == 0:
+            print("Cost after iteration {}:{}".format(i, np.squeeze(cost)))
+
+        if i % 100 ==0:
+            costs.append(cost)
+
+    plt.plot(np.squeeze(costs))
+    plt.ylabel('cost')
+    plt.xlabel('iteration (per tens)')
+    plt.title("Learning rate =" + str(learning_rate))
+    plt.show()
+
+    return parameters
+
+
+def L_layer_model(X, Y, layers_dims, learning_rate=0.0001, num_iteration=3000, print_cost=False):
+    """
+
+    :param X:
+    :param Y:
+    :param layers_dims:
+    :param learning_rate:
+    :param num_iteration:
+    :param print_cost:
+    :return:
+    """
+    np.random.seed(1)
+    costs = []
+
+    parameters = initialize_parameters_deep(layers_dims)
+
+    for i in range(0, num_iteration):
+        AL, caches = L_model_forward(X, parameters)
+
+        cost = compute_cost(AL, Y)
+
+        grads = L_model_backward(AL, Y, caches)
+        parameters = update_parameters(parameters, grads, learning_rate)
+        if print_cost and i % 100 == 0:
+            print("Cost after iteration {}:{}".format(i, np.squeeze(cost)))
+
+        if i % 100 ==0:
+            costs.append(cost)
+
+    plt.plot(np.squeeze(costs))
+    plt.ylabel('cost')
+    plt.xlabel('iteration (per tens)')
+    plt.title("Learning rate =" + str(learning_rate))
+    plt.show()
+
+    return parameters
+
+
+if __name__ == "__main__":
+    train_x_orig, train_y, test_x_orig, test_y, classes = load_dataset()
+
+    m_train = train_x_orig.shape[0]
+    m_test = test_x_orig.shape[0]
+    num_px = train_x_orig.shape[1]
+    train_set_x_flatten = train_x_orig.reshape(train_x_orig.shape[0], -1).T
+    test_set_x_flatten = test_x_orig.reshape(test_x_orig.shape[0], -1).T
+
+    train_set_x = train_set_x_flatten / 255
+    test_set_x = test_set_x_flatten / 255
+
+    n_x = 12288
+    n_h = 7
+    n_y = 1
+#    layers_dims = (n_x, n_h, n_y)
+    layers_dims = [12288, 20, 7, 5, 1]
+
+#    parameters = two_layer_model(train_set_x, train_y, layers_dims=layers_dims, num_iteration=2500, print_cost=True)
+
+    L_parameters = L_layer_model(train_set_x, train_y, layers_dims, num_iteration=2500, print_cost=True)
+
