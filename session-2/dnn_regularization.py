@@ -15,13 +15,13 @@ plt.rcParams['image.cmap'] = 'gray'
 
 train_x, train_y, test_x, test_y = load_2D_dataset()
 
+
 def forward_propagation_with_dropout(x, parameters, keep_prob):
     return 0
 
 
 def compute_cost_with_regularization(a3, y, parameters, lambd):
     """
-
     :param a3:
     :param y:
     :param parameters:
@@ -41,10 +41,34 @@ def compute_cost_with_regularization(a3, y, parameters, lambd):
     return cost
 
 
-
 def backward_propagation_with_regularization(x, y, cache, lambd):
+    """
+    :param x:
+    :param y:
+    :param cache:
+    :param lambd:
+    :return:
+    """
+    m = x.shape[1]
+    (Z1, A1, W1, b1, Z2, A2, W2, b2, Z3, A3, W3, b3) = cache
 
-    return 0
+    dZ3 = A3 -y
+    dW3 = 1./m * np.dot(dZ3, A2.T) + lambd*W3/m
+    db3 = 1./m * np.sum(dZ3, axis=1, keepdims=True)
+    dA2 = np.dot(W3.T, dZ3)
+    dZ2 = np.multiply(dA2, np.int64(A2 > 0))
+    dW2 = 1./m * np.dot(dZ2, A1.T) + lambd*W2/m
+    db2 = 1./m * np.sum(dZ2, axis=1, keepdims=True)
+    dA1 = np.dot(W2.T, dZ2)
+    dZ1 = np.multiply(dA1, np.int64(A1 > 0))
+    dW1 = 1./m * np.dot(dZ1, x.T) + lambd*W1/m
+    db1 = 1./m * np.sum(dZ1, axis=1, keepdims=True)
+
+    gradients = {"dZ3": dZ3, "dW3": dW3, "db3": db3,
+                 "dA2": dA2, "dZ2": dZ2, "dW2": dW2,
+                 "db2": db2, "dA1": dA1, "dZ1": dZ1,
+                 "dW1": dW1, "db1": db1}
+    return gradients
 
 
 def backward_propagation_with_dropout(x, y, cache, keep_prob):
@@ -107,7 +131,7 @@ def model(x, y, learning_rate=0.3, num_iterations=30000, print_cost=True, lambd=
 
 
 if __name__ == '__main__':
-    parameters = model(train_x, train_y)
+    parameters = model(train_x, train_y, lambd=0.7)
     print("On the training set:")
     predictions_train = predict(train_x, train_y, parameters)
     print("On the test set:")
